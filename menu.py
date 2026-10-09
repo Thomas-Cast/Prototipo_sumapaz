@@ -80,12 +80,31 @@ class Menu:
             return
         tipo = input("Tipo de cultivo (Mora/Tomate/Ornamentales): ").strip()
         lote.agregar_cultivo(tipo)
-        print(f"Cultivo '{tipo}' agregado al lote '{lote.nombre}'.")
+        cultivo = lote.cultivos[-1]
+
+        while True:
+            insumo = input("  Nombre del insumo (o 'fin'): ").strip()
+            if insumo.lower() == "fin":
+                break
+            try:
+                valor = float(input(f"  Valor de '{insumo}': "))
+                if valor < 0:
+                    print("  Valor negativo descartado.")
+                    continue
+                cultivo.agregar_insumo(insumo, valor)
+                print("  Insumo agregado.")
+            except ValueError:
+                print("  Valor invalido.")
 
     def _ver_finca(self):
         print(f"\n{self.finca.nombre}")
+        if not self.finca.lotes:
+            print("  (Sin lotes)")
+            return
         for lote in self.finca.lotes:
             print(f"  Lote: {lote.nombre}")
+            if not lote.cultivos:
+                print("    (sin cultivos)")
             for cultivo in lote.cultivos:
                 print(f"    Cultivo: {cultivo.nombre}")
                 for insumo in cultivo.insumos:
