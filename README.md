@@ -15,14 +15,6 @@ tres variables clave del pequeno productor agricola:
 Ademas, calcula el promedio de pH del suelo y compara precios entre almacenes
 agricolas usando ciclos tradicionales.
 
-## Integrantes
-
-- Thomas Santiago Castellanos Gonzalez
-- Kevin Shtik Candela Santana
-
-## Curso
-
-Estructuras de Informacion - Universidad de Cundinamarca - Fusagasuga
 
 ## Como ejecutar
 
