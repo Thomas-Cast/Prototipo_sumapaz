@@ -23,19 +23,19 @@ class Menu:
 
     def ejecutar(self):
         while True:
-            print("\n" + "=" * 50)
-            print("   PROTOTIPO SUMAPAZ - Fusagasuga")
-            print("=" * 50)
+            print("\nPROTOTIPO SUMAPAZ - Fusagasuga")
+            print("--------------------------------")
             print("1. Registrar lote")
             print("2. Agregar cultivo e insumos")
             print("3. Ver estructura de la finca")
-            print("4. Calcular costo acumulado (recursivo)")
-            print("5. Simular meses de supervivencia (recursivo)")
-            print("6. Indice de vulnerabilidad sucesoral (recursivo)")
-            print("7. Promedio de pH del suelo (ciclo for)")
-            print("8. Comparar precios de almacenes (ciclo for)")
+            print("4. Calcular costo acumulado")
+            print("5. Simular meses de supervivencia")
+            print("6. Indice de vulnerabilidad sucesoral")
+            print("7. Promedio de pH del suelo")
+            print("8. Comparar precios de almacenes")
             print("0. Salir")
-            op = input("\nOpcion: ").strip()
+            print("--------------------------------")
+            op = input("Opcion: ").strip()
 
             if op == "1":
                 self._registrar_lote()
@@ -54,7 +54,7 @@ class Menu:
             elif op == "8":
                 self._precios()
             elif op == "0":
-                print("\nSaliendo del prototipo...\n")
+                print("\nSaliendo del prototipo.\n")
                 break
             else:
                 print("Opcion invalida.")
@@ -113,6 +113,16 @@ class Menu:
     def _costo(self):
         total = costo_acumulado_nodo(self.finca)
         print(f"\nCosto acumulado: ${total:,.0f}")
+        try:
+            venta = float(input("Precio de venta estimado: $"))
+            if venta > 0:
+                margen = venta - total
+                if margen > 0:
+                    print(f"Margen proyectado: ${margen:,.0f} (rentable)")
+                else:
+                    print(f"Margen proyectado: ${margen:,.0f} (perdida)")
+        except ValueError:
+            print("No se calculo margen.")
 
     def _supervivencia(self):
         try:
@@ -122,19 +132,33 @@ class Menu:
         except ValueError:
             print("Datos invalidos.")
             return
+
+        if capital <= 0:
+            print("\nEl productor ya esta en quiebra (capital <= 0).")
+            return
+        if precio <= costo:
+            print("\nAlerta: el ingreso no cubre los costos. Quiebra progresiva.")
+
         meses = capital_restante(1, capital, precio, costo)
         if meses >= 24:
             print("\nSe mantiene al menos 24 meses.")
+            print("Situacion estable.")
         else:
             print(f"\nQuiebra en el mes {meses}.")
+            if meses < 6:
+                print("Riesgo critico: busca reducir costos o diversificar.")
+            elif meses < 12:
+                print("Riesgo medio: revisa tus costos mensuales.")
+            else:
+                print("Riesgo bajo: aun tienes margen de maniobra.")
 
     def _vulnerabilidad(self):
         indice = indice_vulnerabilidad_sucesion(self.abuelo)
         print(f"\nIndice de vulnerabilidad: {indice:.2f}")
         if indice >= 1.5:
-            print("Riesgo ALTO.")
+            print("Riesgo ALTO. Se recomienda apoyo tecnico y crediticio.")
         elif indice >= 1.0:
-            print("Riesgo MEDIO.")
+            print("Riesgo MEDIO. Se recomienda capacitacion en costos.")
         else:
             print("Riesgo BAJO.")
 
@@ -151,9 +175,10 @@ class Menu:
             return
         print(f"\nPH promedio: {ph:.2f}")
         if ph < 5.5:
-            print("ALERTA: pH bajo, aplicar cal.")
+            dosis = (5.5 - ph) * 1000
+            print(f"ALERTA: pH bajo. Aplicar aproximadamente {dosis:.0f} kg de cal por hectarea.")
         else:
-            print("pH adecuado.")
+            print("pH adecuado. No requiere cal.")
 
     def _precios(self):
         print("Ingresa nombre,precio. Escribe 'fin' para terminar.")
@@ -167,8 +192,14 @@ class Menu:
                 precios.append((n.strip(), float(p)))
             except ValueError:
                 print("Formato invalido.")
+
         mejor, valor = almacen_mas_barato(precios)
         if mejor:
             print(f"\nMas barato: {mejor} (${valor:,.0f})")
+            validos = [p for _, p in precios if isinstance(p, (int, float)) and p > 0]
+            if validos:
+                mas_caro = max(validos)
+                ahorro = mas_caro - valor
+                print(f"Ahorro frente al mas caro: ${ahorro:,.0f}")
         else:
             print("Sin precios validos.")
