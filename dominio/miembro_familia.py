@@ -16,7 +16,7 @@ class MiembroFamilia:
 
     def __init__(self, nombre, indice, es_joven=False):
         self.nombre = nombre
-        self.indice = indice
+        self.indice = max(0.0, min(1.0, indice))
         self.hijo = None
         self.es_joven = es_joven
 
