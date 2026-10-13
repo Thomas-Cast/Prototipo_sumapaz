@@ -1,15 +1,11 @@
 # Funciones con ciclos tradicionales (for).
 # Se usan para listas planas, no para jerarquias.
-# Incluyen validacion interna que descarta datos erroneos
-# sin romper el ciclo.
 
 
 def promedio_ph(muestras):
     """
     Calcula el promedio de las muestras de pH de un lote.
-
-    Recorre la lista con un for. Si encuentra un valor que no
-    es numero o esta fuera del rango 0-14, lo descarta y sigue.
+    Descarta valores fuera del rango 0-14.
     Devuelve None si no hay muestras validas.
     """
     suma = 0
@@ -26,8 +22,6 @@ def promedio_ph(muestras):
 def almacen_mas_barato(precios):
     """
     Encuentra el almacen con el precio mas bajo para un insumo.
-
-    Recorre la lista de pares (nombre, precio) con un for.
     Descarta precios negativos o no numericos.
     Devuelve (None, None) si no hay precios validos.
     """

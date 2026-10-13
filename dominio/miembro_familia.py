@@ -21,7 +21,6 @@ class MiembroFamilia:
         self.es_joven = es_joven
 
     def es_el_mas_joven(self):
-        """Devuelve True si este miembro es el activo mas joven."""
         return self.es_joven
 
     def __str__(self):
