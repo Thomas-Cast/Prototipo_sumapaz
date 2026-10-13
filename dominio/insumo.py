@@ -9,7 +9,7 @@ class Insumo:
 
     def __init__(self, nombre, valor):
         self.nombre = nombre
-        self.valor = valor
+        self.valor = max(0.0, valor)
 
     def tiene_hijos(self):
         """Devuelve False: un insumo nunca tiene hijos."""
