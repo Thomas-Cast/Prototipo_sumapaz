@@ -69,11 +69,9 @@ class PrototipoSumapaz:
     # ---------- MENU ----------
     def menu(self):
         while True:
-            print("\n" + "=" * 55)
             print("   PROTOTIPO SUMAPAZ - Fusagasuga")
             if self.finca_actual:
                 print(f"   Finca activa: {self.finca_actual.nombre}")
-            print("=" * 55)
             print("1. Crear finca")
             print("2. Seleccionar finca activa")
             print("3. Ver fincas")
@@ -83,10 +81,10 @@ class PrototipoSumapaz:
             print("7. Agregar cultivo e insumos a un lote")
             print("8. Registrar muestras de pH de un lote")
             print("9. Ver estructura completa")
-            print("10. Calcular costo acumulado (recursivo)")
-            print("11. Simular supervivencia (recursivo)")
-            print("12. Vulnerabilidad sucesoral (recursivo)")
-            print("13. Comparar precios por producto (for)")
+            print("10. Calcular costo acumulado")
+            print("11. Simular supervivencia")
+            print("12. Vulnerabilidad sucesoral")
+            print("13. Comparar precios por producto")
             print("14. Generar alertas")
             print("0. Salir")
             opcion = input("\nElige una opcion: ").strip()
