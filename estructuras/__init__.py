@@ -1,2 +1,2 @@
-# Paquete estructuras.
-# Agrupa las estructuras de datos auxiliares del prototipo Sumapaz.
+from estructuras.pila import Pila
+from estructuras.cola import Cola

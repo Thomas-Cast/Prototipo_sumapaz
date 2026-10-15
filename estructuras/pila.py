@@ -1,8 +1,10 @@
-class Pila:
-    """
-    Estructura LIFO: el ultimo en entrar es el primero en salir.
-    """
+# ============================================================
+# Pila: estructura LIFO.
+# Se usa para mostrar como funciona la recursion internamente.
+# ============================================================
 
+
+class Pila:
     def __init__(self):
         self.elementos = []
 
@@ -10,17 +12,17 @@ class Pila:
         self.elementos.append(item)
 
     def desapilar(self):
-        if not self.esta_vacia():
-            return self.elementos.pop()
-        return None
+        if self.esta_vacia():
+            return None
+        return self.elementos.pop()
+
+    def cima(self):
+        if self.esta_vacia():
+            return None
+        return self.elementos[-1]
 
     def esta_vacia(self):
         return len(self.elementos) == 0
-
-    def cima(self):
-        if not self.esta_vacia():
-            return self.elementos[-1]
-        return None
 
     def tamano(self):
         return len(self.elementos)

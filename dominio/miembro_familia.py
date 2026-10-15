@@ -1,28 +1,22 @@
+# ============================================================
+# MiembroFamilia: nodo del arbol genealogico.
+# La cadena es abuelo -> padre -> hijo, pero ahora cada miembro
+# puede tener varios hijos porque se guardan en una lista.
+# ============================================================
+
 class MiembroFamilia:
-    """
-    Nodo del arbol genealogico familiar.
-    Representa a un integrante: Abuelo, Padre, Hijo.
-
-    El atributo 'indice' mide la vulnerabilidad acumulada del miembro
-    (deudas, perdidas, falta de reinversion), en un rango de 0.0 a 1.0.
-
-    El atributo 'hijo' enlaza con la siguiente generacion.
-    El atributo 'es_joven' marca al miembro activo mas joven.
-
-    Es el CASO BASE de la funcion recursiva
-    indice_vulnerabilidad_sucesion: la cadena termina cuando se
-    llega al miembro mas joven.
-    """
-
     def __init__(self, nombre, indice, es_joven=False):
+        if not nombre.strip():
+            raise ValueError("El nombre del miembro no puede estar vacio.")
+        if not (0.0 <= indice <= 1.0):
+            raise ValueError("El indice debe estar entre 0.0 y 1.0.")
         self.nombre = nombre
-        self.indice = max(0.0, min(1.0, indice))
-        self.hijo = None
+        self.indice = indice
+        self.hijos = []
         self.es_joven = es_joven
 
     def es_el_mas_joven(self):
         return self.es_joven
 
-    def __str__(self):
-        marca = " (joven)" if self.es_joven else ""
-        return f"{self.nombre}: indice {self.indice:.2f}{marca}"
+    def agregar_hijo(self, hijo):
+        self.hijos.append(hijo)

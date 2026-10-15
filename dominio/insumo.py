@@ -1,19 +1,22 @@
+# ============================================================
+# Insumo: hoja del arbol de costos.
+# Caso base de la recursion costo_acumulado_nodo.
+# ============================================================
+
 class Insumo:
-    """
-    Hoja del arbol de costos.
-    Representa un gasto individual: fertilizante, jornal, cal, etc.
-
-    Es el CASO BASE de la funcion recursiva costo_acumulado_nodo,
-    porque no tiene hijos.
-    """
-
     def __init__(self, nombre, valor):
+        if not nombre.strip():
+            raise ValueError("El nombre del insumo no puede estar vacio.")
+        if valor < 0:
+            raise ValueError("El valor del insumo no puede ser negativo.")
         self.nombre = nombre
-        self.valor = max(0.0, valor)
+        self.valor = valor
 
     def tiene_hijos(self):
-        """Devuelve False: un insumo nunca tiene hijos."""
         return False
 
-    def __str__(self):
-        return f"{self.nombre}: ${self.valor:,.0f}"
+    def hijos(self):
+        return []
+
+    def __repr__(self):
+        return f"Insumo({self.nombre}, {self.valor})"

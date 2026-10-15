@@ -1,23 +1,9 @@
-class ArbolGenealogico:
-    """
-    Contenedor del arbol familiar.
-    Guarda la raiz (el miembro mas antiguo) y expone
-    operaciones basicas sobre la cadena.
-    """
+# ============================================================
+# Alias de compatibilidad.
+# La clase Familia reemplaza a ArbolGenealogico.
+# Se mantiene este archivo por si algun import antiguo lo usa.
+# ============================================================
 
-    def __init__(self, raiz):
-        self.raiz = raiz
+from dominio.familia import Familia
 
-    def miembros(self):
-        lista = []
-        actual = self.raiz
-        while actual is not None:
-            lista.append(actual)
-            actual = actual.hijo
-        return lista
-
-    def tamano(self):
-        return len(self.miembros())
-
-    def __str__(self):
-        return f"Arbol genealogico con {self.tamano()} miembros"
+ArbolGenealogico = Familia

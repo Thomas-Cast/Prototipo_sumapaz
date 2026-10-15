@@ -1,554 +1,448 @@
-# Menu principal del prototipo.
-# Solo orquesta: llama a las clases del dominio y a los algoritmos.
-# No implementa logica de negocio.
+# ============================================================
+# Menu interactivo del prototipo Sumapaz.
+# Aqui vive la clase PrototipoSumapaz con toda la interaccion
+# con el usuario y las validaciones de entrada.
+# ============================================================
 
 from dominio.finca import Finca
-from dominio.miembro_familia import MiembroFamilia
+from dominio.lote import Lote
+from dominio.cultivo import Cultivo
+from dominio.insumo import Insumo
+from dominio.familia import Familia
+
 from algoritmos.recursivos import (
     costo_acumulado_nodo,
     capital_restante,
     indice_vulnerabilidad_sucesion,
 )
-from algoritmos.iterativos import promedio_ph, almacen_mas_barato
+from algoritmos.iterativos import (
+    promedio_ph,
+    almacen_mas_barato_por_producto,
+)
 
 
-class Menu:
+# ============================================================
+# Utilidades de entrada estandarizadas
+# ============================================================
+
+def pedir(mensaje, tipo=float, minimo=None, maximo=None, permitir_vacio=False):
+    """Solicita un dato al usuario y lo valida en un solo lugar."""
+    while True:
+        valor = input(mensaje).strip()
+        if not permitir_vacio and valor == "":
+            print("  No puede estar vacio.")
+            continue
+        if tipo is str:
+            return valor
+        try:
+            numero = tipo(valor)
+        except ValueError:
+            print(f"  Debe ser {tipo.__name__}.")
+            continue
+        if minimo is not None and numero < minimo:
+            print(f"  Debe ser mayor o igual a {minimo}.")
+            continue
+        if maximo is not None and numero > maximo:
+            print(f"  Debe ser menor o igual a {maximo}.")
+            continue
+        return numero
+
+
+def pedir_si_no(mensaje):
+    """Solicita confirmacion s/n y devuelve bool."""
+    while True:
+        valor = input(mensaje).strip().lower()
+        if valor in ("s", "si", "n", "no"):
+            return valor in ("s", "si")
+        print("  Responde 's' o 'n'.")
+
+
+# ============================================================
+# Clase principal del menu
+# ============================================================
+
+class PrototipoSumapaz:
     def __init__(self):
-        nombre = input("Nombre de la finca: ").strip()
-        if not nombre:
-            nombre = "Mi finca"
-        self.finca = Finca(nombre)
-        self.raiz_familiar = None
+        self.fincas = []
+        self.finca_actual = None
 
-    # =========================================================
-    # MENU PRINCIPAL
-    # =========================================================
-    def ejecutar(self):
+    # ---------- MENU ----------
+    def menu(self):
         while True:
-            print(f"\nPROTOTIPO SUMAPAZ - Fusagasuga")
-            print(f"Finca: {self.finca.nombre}\n")
-            print("1. Registrar lote")
-            print("2. Agregar cultivo e insumos")
-            print("3. Ver estructura de la finca")
-            print("4. Calcular costo acumulado")
-            print("5. Simular meses de supervivencia")
-            print("6. Registrar familia y calcular vulnerabilidad")
-            print("7. Promedio de pH del suelo")
-            print("8. Comparar precios de almacenes")
-            print("9. Eliminar lote")
-            print("10. Eliminar cultivo")
-            print("11. Eliminar insumo")
-            print("12. Cambiar nombre de la finca")
-            print("0. Salir\n")
-            op = input("Opcion: ").strip()
+            print("\n" + "=" * 55)
+            print("   PROTOTIPO SUMAPAZ - Fusagasuga")
+            if self.finca_actual:
+                print(f"   Finca activa: {self.finca_actual.nombre}")
+            print("=" * 55)
+            print("1. Crear finca")
+            print("2. Seleccionar finca activa")
+            print("3. Ver fincas")
+            print("4. Registrar lote")
+            print("5. Registrar familia")
+            print("6. Agregar miembro a una familia")
+            print("7. Agregar cultivo e insumos a un lote")
+            print("8. Registrar muestras de pH de un lote")
+            print("9. Ver estructura completa")
+            print("10. Calcular costo acumulado (recursivo)")
+            print("11. Simular supervivencia (recursivo)")
+            print("12. Vulnerabilidad sucesoral (recursivo)")
+            print("13. Comparar precios por producto (for)")
+            print("14. Generar alertas")
+            print("0. Salir")
+            opcion = input("\nElige una opcion: ").strip()
 
-            if op == "1":
-                self._registrar_lote()
-            elif op == "2":
-                self._submenu_agregar()
-            elif op == "3":
-                self._submenu_ver()
-            elif op == "4":
-                self._costo()
-            elif op == "5":
-                self._supervivencia()
-            elif op == "6":
-                self._submenu_familia()
-            elif op == "7":
-                self._ph()
-            elif op == "8":
-                self._precios()
-            elif op == "9":
-                self._eliminar_lote()
-            elif op == "10":
-                self._eliminar_cultivo()
-            elif op == "11":
-                self._eliminar_insumo()
-            elif op == "12":
-                self._cambiar_nombre_finca()
-            elif op == "0":
-                confirmar = input("Estas seguro de salir? (s/n): ").strip().lower()
-                if confirmar == "s":
-                    print("\nSaliendo del prototipo.\n")
-                    break
-            else:
-                print("Opcion invalida.")
-
-    # =========================================================
-    # SUBMENU: AGREGAR CULTIVO E INSUMOS
-    # =========================================================
-    def _submenu_agregar(self):
-        lote = self._elegir_lote()
-        if not lote:
-            return
-
-        tipo = input("Nombre del cultivo: ").strip()
-        if not tipo:
-            print("Nombre vacio.")
-            return
-
-        insumos_temporales = []
-
-        while True:
-            print(f"\nCultivo: {tipo} en Lote: {lote.nombre}")
-            print(f"Insumos agregados: {len(insumos_temporales)}\n")
-            print("1. Agregar insumo")
-            print("2. Ver insumos agregados")
-            print("3. Eliminar un insumo")
-            print("4. Terminar y guardar cultivo")
-            print("0. Cancelar\n")
-            op = input("Opcion: ").strip()
-
-            if op == "1":
-                insumo = input("  Nombre del insumo: ").strip()
-                if not insumo:
-                    print("  Nombre vacio.")
-                    continue
-                valor = self._pedir_numero(f"  Valor de '{insumo}': ")
-                if valor is None or valor <= 0:
-                    print("  Valor invalido.")
-                    continue
-                insumos_temporales.append((insumo, valor))
-                print("  Insumo agregado temporalmente.")
-
-            elif op == "2":
-                if not insumos_temporales:
-                    print("  (Sin insumos)")
-                else:
-                    for i, (n, v) in enumerate(insumos_temporales, 1):
-                        print(f"  [{i}] {n}: ${v:,.0f}")
-
-            elif op == "3":
-                if not insumos_temporales:
-                    print("  No hay insumos para eliminar.")
-                    continue
-                for i, (n, v) in enumerate(insumos_temporales, 1):
-                    print(f"  [{i}] {n}: ${v:,.0f}")
-                try:
-                    idx = int(input("  Numero del insumo a eliminar: ")) - 1
-                    if 0 <= idx < len(insumos_temporales):
-                        eliminado = insumos_temporales.pop(idx)
-                        print(f"  Eliminado: {eliminado[0]}")
-                    else:
-                        print("  Numero fuera de rango.")
-                except ValueError:
-                    print("  Numero invalido.")
-
-            elif op == "4":
-                if not insumos_temporales:
-                    confirmar = input("No hay insumos. Guardar cultivo vacio? (s/n): ").strip().lower()
-                    if confirmar != "s":
-                        continue
-                lote.agregar_cultivo(tipo)
-                cultivo = lote.cultivos[-1]
-                for n, v in insumos_temporales:
-                    cultivo.agregar_insumo(n, v)
-                print(f"\nCultivo '{tipo}' guardado en '{lote.nombre}' con {len(insumos_temporales)} insumos.")
-                return
-
-            elif op == "0":
-                print("Cancelado. No se guardo el cultivo.")
-                return
-
-            else:
-                print("Opcion invalida.")
-
-    # =========================================================
-    # SUBMENU: VER ESTRUCTURA
-    # =========================================================
-    def _submenu_ver(self):
-        while True:
-            print("\nVer estructura\n")
-            print("1. Ver toda la finca")
-            print("2. Ver un lote")
-            print("3. Ver un cultivo")
-            print("0. Volver al menu principal\n")
-            op = input("Opcion: ").strip()
-
-            if op == "1":
-                self._ver_finca_completa()
-            elif op == "2":
-                self._ver_un_lote()
-            elif op == "3":
-                self._ver_un_cultivo()
-            elif op == "0":
-                return
-            else:
-                print("Opcion invalida.")
-
-    def _ver_finca_completa(self):
-        print(f"\n{self.finca.nombre}")
-        if not self.finca.lotes:
-            print("  (Sin lotes)")
-            return
-        total_finca = 0
-        for lote in self.finca.lotes:
-            print(f"  Lote: {lote.nombre}")
-            if not lote.cultivos:
-                print("    (sin cultivos)")
-            subtotal_lote = 0
-            for cultivo in lote.cultivos:
-                print(f"    Cultivo: {cultivo.nombre}")
-                if not cultivo.insumos:
-                    print("      (sin insumos: costo 0)")
-                subtotal_cultivo = 0
-                for insumo in cultivo.insumos:
-                    print(f"      - {insumo.nombre}: ${insumo.valor:,.0f}")
-                    subtotal_cultivo += insumo.valor
-                print(f"      Subtotal cultivo: ${subtotal_cultivo:,.0f}")
-                subtotal_lote += subtotal_cultivo
-            print(f"    Subtotal lote: ${subtotal_lote:,.0f}")
-            total_finca += subtotal_lote
-        print(f"  Total finca: ${total_finca:,.0f}")
-
-    def _ver_un_lote(self):
-        lote = self._elegir_lote()
-        if not lote:
-            return
-        print(f"\nLote: {lote.nombre}")
-        if not lote.cultivos:
-            print("  (sin cultivos)")
-            return
-        subtotal = 0
-        for cultivo in lote.cultivos:
-            print(f"  Cultivo: {cultivo.nombre}")
-            if not cultivo.insumos:
-                print("    (sin insumos)")
-            subtotal_cultivo = 0
-            for insumo in cultivo.insumos:
-                print(f"    - {insumo.nombre}: ${insumo.valor:,.0f}")
-                subtotal_cultivo += insumo.valor
-            print(f"    Subtotal cultivo: ${subtotal_cultivo:,.0f}")
-            subtotal += subtotal_cultivo
-        print(f"  Subtotal lote: ${subtotal:,.0f}")
-
-    def _ver_un_cultivo(self):
-        lote = self._elegir_lote()
-        if not lote or not lote.cultivos:
-            print("Ese lote no tiene cultivos.")
-            return
-        for i, c in enumerate(lote.cultivos, 1):
-            print(f"  [{i}] {c.nombre}")
-        nombre = input("Nombre del cultivo: ").strip()
-        cultivo = None
-        for c in lote.cultivos:
-            if c.nombre.lower() == nombre.lower():
-                cultivo = c
+            acciones = {
+                "1": self.crear_finca,
+                "2": self.seleccionar_finca,
+                "3": self.ver_fincas,
+                "4": self.registrar_lote,
+                "5": self.registrar_familia,
+                "6": self.agregar_miembro,
+                "7": self.agregar_cultivo,
+                "8": self.registrar_ph,
+                "9": self.ver_estructura,
+                "10": self.calcular_costo,
+                "11": self.simular_supervivencia,
+                "12": self.calcular_vulnerabilidad,
+                "13": self.comparar_precios,
+                "14": self.generar_alertas,
+            }
+            if opcion == "0":
+                print("\nSaliendo del prototipo Sumapaz...\n")
                 break
-        if not cultivo:
-            print("Cultivo no encontrado.")
-            return
-        print(f"\nCultivo: {cultivo.nombre} (Lote: {lote.nombre})")
-        if not cultivo.insumos:
-            print("  (sin insumos)")
-            return
-        subtotal = 0
-        for insumo in cultivo.insumos:
-            print(f"  - {insumo.nombre}: ${insumo.valor:,.0f}")
-            subtotal += insumo.valor
-        print(f"  Subtotal: ${subtotal:,.0f}")
-
-    # =========================================================
-    # SUBMENU: FAMILIA
-    # =========================================================
-    def _submenu_familia(self):
-        miembros = []
-
-        while True:
-            print(f"\nRegistrar familia")
-            print(f"Miembros registrados: {len(miembros)}\n")
-            print("1. Agregar miembro")
-            print("2. Ver miembros")
-            print("3. Eliminar miembro")
-            print("4. Terminar y calcular vulnerabilidad")
-            print("0. Cancelar\n")
-            op = input("Opcion: ").strip()
-
-            if op == "1":
-                nombre = input("  Nombre del miembro: ").strip()
-                if not nombre:
-                    print("  Nombre vacio.")
-                    continue
-                indice = self._pedir_numero(f"  Indice de {nombre} (0.0 a 1.0): ")
-                if indice is None or indice < 0 or indice > 1:
-                    print("  Indice invalido.")
-                    continue
-                joven = input(f"  {nombre} es el mas joven? (s/n): ").strip().lower() == "s"
-                miembros.append((nombre, indice, joven))
-                print("  Miembro agregado.")
-
-            elif op == "2":
-                if not miembros:
-                    print("  (Sin miembros)")
-                else:
-                    for i, (n, idx, j) in enumerate(miembros, 1):
-                        marca = " (joven)" if j else ""
-                        print(f"  [{i}] {n}: {idx:.2f}{marca}")
-
-            elif op == "3":
-                if not miembros:
-                    print("  No hay miembros para eliminar.")
-                    continue
-                for i, (n, idx, j) in enumerate(miembros, 1):
-                    print(f"  [{i}] {n}")
-                try:
-                    pos = int(input("  Numero del miembro a eliminar: ")) - 1
-                    if 0 <= pos < len(miembros):
-                        eliminado = miembros.pop(pos)
-                        print(f"  Eliminado: {eliminado[0]}")
-                    else:
-                        print("  Numero fuera de rango.")
-                except ValueError:
-                    print("  Numero invalido.")
-
-            elif op == "4":
-                if not miembros:
-                    print("  No hay miembros registrados.")
-                    continue
-                if not any(j for _, _, j in miembros):
-                    confirmar = input("  Ningun miembro marcado como joven. Continuar? (s/n): ").strip().lower()
-                    if confirmar != "s":
-                        continue
-
-                raiz = None
-                anterior = None
-                for n, idx, j in miembros:
-                    m = MiembroFamilia(n, idx, es_joven=j)
-                    if raiz is None:
-                        raiz = m
-                    else:
-                        anterior.hijo = m
-                    anterior = m
-                self.raiz_familiar = raiz
-
-                indice_total = indice_vulnerabilidad_sucesion(raiz)
-                print(f"\nIndice de vulnerabilidad sucesoral: {indice_total:.2f}")
-                if indice_total >= 1.5:
-                    print("Riesgo ALTO. Se recomienda apoyo tecnico y crediticio.")
-                elif indice_total >= 1.0:
-                    print("Riesgo MEDIO. Se recomienda capacitacion en costos.")
-                else:
-                    print("Riesgo BAJO.")
-                return
-
-            elif op == "0":
-                print("Cancelado. No se guardo la familia.")
-                return
-
+            accion = acciones.get(opcion)
+            if accion:
+                accion()
             else:
-                print("Opcion invalida.")
+                print("  Opcion invalida.")
 
-    # =========================================================
-    # UTILIDADES INTERNAS
-    # =========================================================
-    def _pedir_numero(self, mensaje):
-        entrada = input(mensaje).strip().replace(",", ".")
+    # ---------- FINCAS ----------
+    def _requiere_finca(self):
+        if not self.finca_actual:
+            print("  Primero crea o selecciona una finca.")
+            return False
+        return True
+
+    def crear_finca(self):
+        nombre = pedir("Nombre de la finca: ", tipo=str)
         try:
-            return float(entrada)
-        except ValueError:
-            return None
+            nueva = Finca(nombre)
+            self.fincas.append(nueva)
+            self.finca_actual = nueva
+            print(f"  Finca '{nombre}' creada y seleccionada.")
+        except ValueError as e:
+            print(f"  {e}")
 
-    def _elegir_lote(self):
-        if not self.finca.lotes:
-            print("No hay lotes registrados.")
-            return None
-        for i, lote in enumerate(self.finca.lotes, 1):
-            print(f"  [{i}] {lote.nombre}")
-        nombre = input("Nombre del lote: ").strip()
-        lote = self.finca.buscar_lote(nombre)
+    def seleccionar_finca(self):
+        if not self.fincas:
+            print("  No hay fincas creadas.")
+            return
+        for i, f in enumerate(self.fincas, 1):
+            print(f"  [{i}] {f.nombre}")
+        nombre = pedir("Nombre de la finca: ", tipo=str)
+        finca = next(
+            (f for f in self.fincas if f.nombre.lower() == nombre.lower()),
+            None,
+        )
+        if finca:
+            self.finca_actual = finca
+            print(f"  Finca activa: {finca.nombre}")
+        else:
+            print("  Finca no encontrada.")
+
+    def ver_fincas(self):
+        if not self.fincas:
+            print("  No hay fincas creadas.")
+            return
+        for f in self.fincas:
+            activa = " (activa)" if f is self.finca_actual else ""
+            print(f"  {f.nombre}{activa}: {len(f.lotes)} lotes, {len(f.familias)} familias")
+
+    # ---------- LOTES ----------
+    def registrar_lote(self):
+        if not self._requiere_finca():
+            return
+        nombre = pedir("Nombre del lote: ", tipo=str)
+        try:
+            self.finca_actual.agregar_lote(Lote(nombre))
+            print(f"  Lote '{nombre}' registrado.")
+        except ValueError as e:
+            print(f"  {e}")
+
+    # ---------- FAMILIAS ----------
+    def registrar_familia(self):
+        if not self._requiere_finca():
+            return
+        nombre = pedir("Nombre de la familia: ", tipo=str)
+        try:
+            self.finca_actual.agregar_familia(Familia(nombre))
+            print(f"  Familia '{nombre}' registrada.")
+        except ValueError as e:
+            print(f"  {e}")
+
+    def agregar_miembro(self):
+        if not self._requiere_finca():
+            return
+        if not self.finca_actual.familias:
+            print("  Primero registra una familia.")
+            return
+        for f in self.finca_actual.familias:
+            print(f"  {f.nombre}")
+        nombre_fam = pedir("Nombre de la familia: ", tipo=str)
+        fam = self.finca_actual.buscar_familia(nombre_fam)
+        if not fam:
+            print("  Familia no encontrada.")
+            return
+
+        nombre = pedir("Nombre del miembro: ", tipo=str)
+        indice = pedir("Indice (0.0 a 1.0): ", float, 0.0, 1.0)
+        es_joven = pedir_si_no("Es el miembro mas joven? (s/n): ")
+
+        padre = None
+        if fam.raiz is not None:
+            nombre_padre = pedir(
+                "Nombre del padre (vacio si es raiz): ",
+                tipo=str,
+                permitir_vacio=True,
+            )
+            if nombre_padre:
+                padre = fam.buscar_miembro(nombre_padre)
+                if not padre:
+                    print("  Padre no encontrado.")
+                    return
+        try:
+            fam.agregar_miembro(nombre, indice, padre, es_joven)
+            print(f"  Miembro '{nombre}' agregado.")
+        except ValueError as e:
+            print(f"  {e}")
+
+    # ---------- CULTIVOS ----------
+    def _listar_lotes(self):
+        print("  Lotes:")
+        for i, l in enumerate(self.finca_actual.lotes, 1):
+            print(f"    [{i}] {l.nombre}")
+
+    def agregar_cultivo(self):
+        if not self._requiere_finca():
+            return
+        if not self.finca_actual.lotes:
+            print("  Primero registra un lote.")
+            return
+        self._listar_lotes()
+        nombre_lote = pedir("Nombre del lote: ", tipo=str)
+        lote = self.finca_actual.buscar_lote(nombre_lote)
         if not lote:
-            print("Lote no encontrado.")
-        return lote
-
-    # =========================================================
-    # OPCIONES SIMPLES
-    # =========================================================
-    def _registrar_lote(self):
-        nombre = input("Nombre del lote: ").strip()
-        if not nombre:
-            print("Nombre vacio.")
-            return
-        if self.finca.buscar_lote(nombre):
-            print("Ya existe un lote con ese nombre.")
-            return
-        self.finca.agregar_lote(nombre)
-        print(f"Lote '{nombre}' agregado.")
-
-    def _costo(self):
-        if not self.finca.lotes:
-            print("\nPrimero registra lotes e insumos.")
-            return
-        total = costo_acumulado_nodo(self.finca)
-        print(f"\nCosto acumulado: ${total:,.0f}")
-        if total == 0:
-            print("No hay insumos registrados.")
-            return
-        venta = self._pedir_numero("Precio de venta estimado: $")
-        if venta is None or venta <= 0:
-            print("No se calculo margen.")
-            return
-        margen = venta - total
-        if margen > 0:
-            print(f"Margen proyectado: ${margen:,.0f} (rentable)")
-        else:
-            print(f"Margen proyectado: ${margen:,.0f} (perdida)")
-
-    def _supervivencia(self):
-        capital = self._pedir_numero("Capital inicial: ")
-        precio = self._pedir_numero("Ingreso mensual: ")
-        costo = self._pedir_numero("Costo mensual: ")
-        if capital is None or precio is None or costo is None:
-            print("Datos invalidos.")
+            print("  Lote no encontrado.")
             return
 
-        if capital <= 0:
-            print("\nEl productor ya esta en quiebra (capital <= 0).")
-            return
-        if precio <= costo:
-            print("\nAlerta: el ingreso no cubre los costos. Quiebra progresiva.")
-
-        print("\nProyeccion mes a mes:")
-        self._proyectar(1, capital, precio, costo)
-
-    def _proyectar(self, mes, capital, precio, costo):
-        if capital <= 0:
-            print(f"  Mes {mes - 1}: ${capital:,.0f} -> QUIEBRA")
-            print(f"\nQuiebra en el mes {mes - 1}.")
-            if mes - 1 < 6:
-                print("Riesgo critico: busca reducir costos o diversificar.")
-            elif mes - 1 < 12:
-                print("Riesgo medio: revisa tus costos mensuales.")
-            else:
-                print("Riesgo bajo: aun tienes margen de maniobra.")
-            return
-        if mes == 25:
-            print(f"  Mes 24: ${capital:,.0f}")
-            print("\nSe mantiene al menos 24 meses. Situacion estable.")
-            return
-        print(f"  Mes {mes}: ${capital:,.0f}")
-        nuevo = capital + (precio - costo)
-        self._proyectar(mes + 1, nuevo, precio, costo)
-
-    def _ph(self):
-        entrada = input("Muestras de pH separadas por coma: ").strip()
         try:
-            muestras = [float(x.replace(",", ".")) for x in entrada.split(",")]
-        except ValueError:
-            print("Datos invalidos.")
+            tipo = pedir("Tipo (Mora / Tomate / Ornamentales): ", tipo=str)
+            cultivo = Cultivo(tipo)
+        except ValueError as e:
+            print(f"  {e}")
             return
-        ph = promedio_ph(muestras)
-        if ph is None:
-            print("Sin muestras validas.")
-            return
-        print(f"\nPH promedio: {ph:.2f}")
-        if ph < 5.5:
-            dosis = (5.5 - ph) * 1000
-            print(f"ALERTA: pH bajo. Aplicar ~{dosis:.0f} kg de cal por hectarea.")
-        else:
-            print("pH adecuado. No requiere cal.")
 
-    def _precios(self):
-        print("Ingresa nombre,precio. Escribe 'fin' para terminar.")
-        precios = []
         while True:
-            linea = input("  > ").strip()
+            nombre = pedir("  Insumo (o 'fin' para terminar): ", tipo=str)
+            if nombre.lower() == "fin":
+                break
+            valor = pedir(f"  Valor de '{nombre}': ", float, 0)
+            try:
+                cultivo.agregar_insumo(Insumo(nombre, valor))
+                print("  Insumo agregado.")
+            except ValueError as e:
+                print(f"  {e}")
+
+        try:
+            lote.agregar_cultivo(cultivo)
+            print(f"  Cultivo '{cultivo.nombre}' agregado al lote '{lote.nombre}'.")
+        except ValueError as e:
+            print(f"  {e}")
+
+    # ---------- pH ----------
+    def registrar_ph(self):
+        if not self._requiere_finca():
+            return
+        if not self.finca_actual.lotes:
+            print("  Primero registra un lote.")
+            return
+        self._listar_lotes()
+        nombre_lote = pedir("Nombre del lote: ", tipo=str)
+        lote = self.finca_actual.buscar_lote(nombre_lote)
+        if not lote:
+            print("  Lote no encontrado.")
+            return
+
+        entrada = pedir(
+            "Muestras de pH separadas por coma (ej: 5.2,5.8,4.9): ",
+            tipo=str,
+        )
+        try:
+            muestras = [float(x) for x in entrada.split(",")]
+        except ValueError:
+            print("  Algun valor no es numerico.")
+            return
+
+        agregadas = 0
+        for m in muestras:
+            try:
+                lote.agregar_muestra_ph(m)
+                agregadas += 1
+            except ValueError:
+                print(f"  Muestra {m} descartada.")
+
+        if agregadas == 0:
+            print("  Ninguna muestra valida.")
+            return
+
+        ph = promedio_ph(lote.muestras_ph)
+        print(f"\n  pH promedio del lote '{lote.nombre}': {ph:.2f}")
+        self._alertas_ph(lote, ph)
+
+    def _alertas_ph(self, lote, ph):
+        if not lote.cultivos:
+            if ph < 5.5:
+                print("  ALERTA: pH bajo, los nutrientes se bloquean.")
+            return
+        for cultivo in lote.cultivos:
+            rango = cultivo.rango_ph()
+            if not rango:
+                continue
+            minimo, maximo, _ = rango
+            gramos = cultivo.dosis_cal(ph)
+            if ph < minimo:
+                print(
+                    f"    {cultivo.nombre}: pH bajo (optimo {minimo}-{maximo}). "
+                    f"Aplicar {gramos} g de cal por planta."
+                )
+            elif ph > maximo:
+                print(f"    {cultivo.nombre}: pH alto (optimo {minimo}-{maximo}).")
+            else:
+                print(f"    {cultivo.nombre}: pH adecuado.")
+
+    # ---------- VISTA ----------
+    def ver_estructura(self):
+        if not self._requiere_finca():
+            return
+        print(f"\n{self.finca_actual.nombre}")
+        for lote in self.finca_actual.lotes:
+            print(f"  |-- Lote: {lote.nombre}")
+            if lote.muestras_ph:
+                print(f"  |     pH promedio: {promedio_ph(lote.muestras_ph):.2f}")
+            if not lote.cultivos:
+                print("  |     (sin cultivos)")
+            for cultivo in lote.cultivos:
+                print(f"  |     |-- Cultivo: {cultivo.nombre}")
+                for insumo in cultivo.insumos:
+                    print(f"  |     |     |-- {insumo.nombre}: ${insumo.valor:,.0f}")
+        print("\n  Familias:")
+        for fam in self.finca_actual.familias:
+            print(f"    Familia: {fam.nombre}")
+            fam.mostrar()
+
+    # ---------- COSTOS ----------
+    def calcular_costo(self):
+        if not self._requiere_finca():
+            return
+        total = costo_acumulado_nodo(self.finca_actual)
+        print(f"\nCosto acumulado total: ${total:,.0f}")
+
+    # ---------- SIMULACION ----------
+    def simular_supervivencia(self):
+        capital = pedir("Capital inicial ($): ", float, 0.01)
+        precio = pedir("Ingreso mensual por ventas ($): ", float, 0)
+        costo = pedir("Costo mensual de insumos ($): ", float, 0)
+
+        if precio == 0 and costo == 0:
+            print("  Ingreso y costo son cero: la simulacion no tiene sentido.")
+            return
+        if precio < costo:
+            print(f"  Advertencia: pierde ${costo - precio:,.0f} por mes.")
+        elif precio == costo:
+            print("  Advertencia: el capital no cambia mes a mes.")
+
+        meses = capital_restante(1, capital, precio, costo)
+        if meses >= 24:
+            print("\nEl productor se mantiene al menos 24 meses (2 anos).")
+        else:
+            print(f"\nEl productor agota su capital en el mes {meses}.")
+
+    # ---------- VULNERABILIDAD ----------
+    def calcular_vulnerabilidad(self):
+        if not self._requiere_finca():
+            return
+        if not self.finca_actual.familias:
+            print("  No hay familias registradas.")
+            return
+        for fam in self.finca_actual.familias:
+            if fam.raiz is None:
+                print(f"  {fam.nombre}: sin miembros registrados.")
+                continue
+            indice = indice_vulnerabilidad_sucesion(fam.raiz)
+            nivel = "ALTO" if indice >= 1.5 else "MEDIO" if indice >= 1.0 else "BAJO"
+            print(f"  {fam.nombre}: indice {indice:.2f} ({nivel})")
+
+    # ---------- PRECIOS ----------
+    def comparar_precios(self):
+        print("Formato: producto,almacen,precio. Escribe 'fin' para terminar.\n")
+        catalogo = {}
+        while True:
+            linea = pedir("  > ", tipo=str, permitir_vacio=True)
             if linea.lower() == "fin":
                 break
+            partes = linea.split(",")
+            if len(partes) != 3:
+                print("  Se esperan 3 campos (producto,almacen,precio).")
+                continue
+            producto, almacen, precio_txt = [p.strip() for p in partes]
+            if not producto or not almacen:
+                print("  Producto o almacen vacios.")
+                continue
             try:
-                n, p = linea.split(",")
-                precio = float(p.strip().replace(",", "."))
-                if precio <= 0:
-                    print("Precio invalido.")
-                    continue
-                precios.append((n.strip(), precio))
+                precio = float(precio_txt)
             except ValueError:
-                print("Formato invalido.")
+                print("  El precio debe ser numerico.")
+                continue
+            if precio <= 0:
+                print("  El precio debe ser mayor que cero.")
+                continue
+            catalogo.setdefault(producto.lower(), []).append((almacen, precio))
 
-        mejor, valor = almacen_mas_barato(precios)
-        if mejor:
-            print(f"\nMas barato: {mejor} (${valor:,.0f})")
-            validos = [p for _, p in precios if isinstance(p, (int, float)) and p > 0]
-            if validos:
-                mas_caro = max(validos)
-                ahorro = mas_caro - valor
-                porcentaje = (ahorro / mas_caro) * 100 if mas_caro > 0 else 0
-                print(f"Ahorro frente al mas caro: ${ahorro:,.0f} ({porcentaje:.1f}%)")
-        else:
-            print("Sin precios validos.")
+        if not catalogo:
+            print("\n  No hay registros validos.")
+            return
 
-    def _eliminar_lote(self):
-        lote = self._elegir_lote()
-        if not lote:
-            return
-        confirmar = input(f"Eliminar lote '{lote.nombre}'? (s/n): ").strip().lower()
-        if confirmar == "s":
-            self.finca.eliminar_lote(lote.nombre)
-            print(f"Lote '{lote.nombre}' eliminado.")
-        else:
-            print("Cancelado.")
+        resultado = almacen_mas_barato_por_producto(catalogo)
+        print("\nComparacion por producto:")
+        for producto, (mejor, precio, empates) in resultado.items():
+            print(f"  {producto}: mas barato en {mejor} (${precio:,.0f})")
+            if len(empates) > 1:
+                print(f"    Empate entre: {', '.join(empates)}")
 
-    def _eliminar_cultivo(self):
-        lote = self._elegir_lote()
-        if not lote or not lote.cultivos:
-            print("Ese lote no tiene cultivos.")
+    # ---------- ALERTAS ----------
+    def generar_alertas(self):
+        if not self._requiere_finca():
             return
-        for i, c in enumerate(lote.cultivos, 1):
-            print(f"  [{i}] {c.nombre}")
-        nombre = input("Nombre del cultivo a eliminar: ").strip()
-        cultivo = None
-        for c in lote.cultivos:
-            if c.nombre.lower() == nombre.lower():
-                cultivo = c
-                break
-        if not cultivo:
-            print("Cultivo no encontrado.")
-            return
-        confirmar = input(f"Eliminar cultivo '{cultivo.nombre}'? (s/n): ").strip().lower()
-        if confirmar == "s":
-            lote.cultivos.remove(cultivo)
-            print(f"Cultivo '{cultivo.nombre}' eliminado.")
-        else:
-            print("Cancelado.")
+        print("\n" + "=" * 55)
+        print("   ALERTAS DEL PROTOTIPO SUMAPAZ")
+        print("=" * 55)
+        total = costo_acumulado_nodo(self.finca_actual)
+        print(f"Costo acumulado: ${total:,.0f}")
 
-    def _eliminar_insumo(self):
-        lote = self._elegir_lote()
-        if not lote or not lote.cultivos:
-            print("Ese lote no tiene cultivos.")
-            return
-        for i, c in enumerate(lote.cultivos, 1):
-            print(f"  [{i}] {c.nombre}")
-        nombre_cultivo = input("Nombre del cultivo: ").strip()
-        cultivo = None
-        for c in lote.cultivos:
-            if c.nombre.lower() == nombre_cultivo.lower():
-                cultivo = c
-                break
-        if not cultivo or not cultivo.insumos:
-            print("Cultivo no encontrado o sin insumos.")
-            return
-        for i, ins in enumerate(cultivo.insumos, 1):
-            print(f"  [{i}] {ins.nombre}: ${ins.valor:,.0f}")
-        nombre_insumo = input("Nombre del insumo a eliminar: ").strip()
-        insumo = None
-        for ins in cultivo.insumos:
-            if ins.nombre.lower() == nombre_insumo.lower():
-                insumo = ins
-                break
-        if not insumo:
-            print("Insumo no encontrado.")
-            return
-        confirmar = input(f"Eliminar insumo '{insumo.nombre}'? (s/n): ").strip().lower()
-        if confirmar == "s":
-            cultivo.insumos.remove(insumo)
-            print(f"Insumo '{insumo.nombre}' eliminado.")
-        else:
-            print("Cancelado.")
+        if not self.finca_actual.familias:
+            print("Sin familias registradas: no aplica el indice sucesoral.")
+        for fam in self.finca_actual.familias:
+            if fam.raiz:
+                indice = indice_vulnerabilidad_sucesion(fam.raiz)
+                nivel = "alto" if indice >= 1.5 else "controlado"
+                print(f"Familia {fam.nombre}: riesgo {nivel} ({indice:.2f}).")
 
-    def _cambiar_nombre_finca(self):
-        print(f"Nombre actual: {self.finca.nombre}")
-        nuevo = input("Nuevo nombre: ").strip()
-        if not nuevo:
-            print("Nombre vacio. No se cambio.")
-            return
-        self.finca.nombre = nuevo
-        print(f"Nombre cambiado a '{nuevo}'.")
+        for lote in self.finca_actual.lotes:
+            if lote.muestras_ph:
+                ph = promedio_ph(lote.muestras_ph)
+                if ph < 5.5:
+                    print(f"Lote {lote.nombre}: pH {ph:.2f}, aplicar cal.")
+                    for c in lote.cultivos:
+                        gramos = c.dosis_cal(ph)
+                        if gramos > 0:
+                            print(f"  {c.nombre}: {gramos} g de cal por planta.")

@@ -1,34 +1,31 @@
-# Funciones con ciclos tradicionales (for).
-# Se usan para listas planas, no para jerarquias.
-
+# ============================================================
+# Funciones con ciclos tradicionales.
+# Se usan sobre listas planas (muestras, ofertas).
+# ============================================================
 
 def promedio_ph(muestras):
-    """
-    Calcula el promedio de las muestras de pH de un lote.
-    Descarta valores fuera del rango 0-14.
-    Devuelve None si no hay muestras validas.
-    """
+    """Promedio lineal con validacion interna (for tradicional)."""
     suma = 0
     validas = 0
     for m in muestras:
         if isinstance(m, (int, float)) and 0 < m < 14:
             suma += m
             validas += 1
-        else:
-            print(f"Muestra descartada: {m}")
     return suma / validas if validas > 0 else None
 
 
-def almacen_mas_barato(precios):
+def almacen_mas_barato_por_producto(catalogo):
     """
-    Encuentra el almacen con el precio mas bajo para un insumo.
-    Descarta precios negativos o no numericos.
-    Devuelve (None, None) si no hay precios validos.
+    Recorre el diccionario producto -> [(almacen, precio), ...]
+    y devuelve, por producto, el almacen mas barato y los empates.
     """
-    if not precios:
-        return None, None
-    mejor_nombre, mejor_precio = None, float("inf")
-    for nombre, precio in precios:
-        if isinstance(precio, (int, float)) and 0 < precio < mejor_precio:
-            mejor_nombre, mejor_precio = nombre, precio
-    return mejor_nombre, mejor_precio
+    resultado = {}
+    for producto, ofertas in catalogo.items():
+        mejor_almacen = None
+        mejor_precio = float("inf")
+        for almacen, precio in ofertas:
+            if precio < mejor_precio:
+                mejor_almacen, mejor_precio = almacen, precio
+        empatados = [a for a, p in ofertas if p == mejor_precio]
+        resultado[producto] = (mejor_almacen, mejor_precio, empatados)
+    return resultado
